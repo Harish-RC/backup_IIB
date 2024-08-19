@@ -9,22 +9,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+      
       - name: Backup broker on IIB server
         env:
           SSH_PRIVATE_KEY: '${{ secrets.SSH_PRIVATE_KEY }}'
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
         run: |
-          # Start the SSH agent and add the private key
+          # Start the SSH agent
+          eval "$(ssh-agent -s)"
+
+          # Add the SSH private key to the agent
           echo "$SSH_PRIVATE_KEY" | ssh-add -
 
           # SSH into the IIB server to create the backup
           ssh -o StrictHostKeyChecking=no $IIB_USER@$IIB_SERVER << 'EOF'
-            # Source the mqsiprofile to set up the IIB environment
             . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
-
-            # Create a backup of the broker
             mqsibackupbroker Demo_INODE1 -a /I2AC/backup/Demo_INODE1.zip
           EOF
 
@@ -34,10 +34,8 @@ jobs:
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
         run: |
-          # Start the SSH agent and add the private key
+          eval "$(ssh-agent -s)"
           echo "$SSH_PRIVATE_KEY" | ssh-add -
-
-          # Download the backup from the IIB server using SCP
           scp -o StrictHostKeyChecking=no $IIB_USER@$IIB_SERVER:/I2AC/backup/Demo_INODE1.zip .
 
       - name: Upload backup to artifacts
@@ -52,26 +50,14 @@ jobs:
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
         run: |
-          # Start the SSH agent and add the private key
+          eval "$(ssh-agent -s)"
           echo "$SSH_PRIVATE_KEY" | ssh-add -
-
-          # Deploy the backup using SCP to transfer the file back to the server
           scp -o StrictHostKeyChecking=no Demo_INODE1.zip $IIB_USER@$IIB_SERVER:/I2AC/backup
-
-          # SSH into the IIB server to perform deployment steps
           ssh -o StrictHostKeyChecking=no $IIB_USER@$IIB_SERVER << 'EOF'
-            # Source the mqsiprofile to set up the IIB environment
             . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
-
-            # Navigate to the deployment directory
             cd /I2AC/backup
-
-            # Unzip the backup file
             unzip Demo_INODE1.zip
-
             # Additional deployment commands here
-            # Example: iib command to deploy or import the backup
-            # iib-restore --file Demo_INODE1.zip
           EOF
 
       - name: Clean up
