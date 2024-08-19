@@ -12,7 +12,8 @@ jobs:
       - name: Create backup
         run: |
           # Replace 'your-directory' with the directory you want to back up
-          tar -czvf backup.tar.gz /tmp/backup/
+          . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile 
+          mqsibackupbroker Demo_INODE1 -a Demo_INODE1.zip -d /I2AC/backup          
       - name: Upload backup to artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -32,14 +33,14 @@ jobs:
           # Deploy the backup using SCP to transfer the file
 
           scp -o StrictHostKeyChecking=no backup.tar.gz
-          $IIB_USER@$IIB_SERVER:/path/to/deploy
+          $IIB_USER@$IIB_SERVER:/temp/backup
 
 
           # SSH into the IIB server to perform deployment steps
 
           ssh -o StrictHostKeyChecking=no $IIB_USER@$IIB_SERVER << 'EOF'
             # Replace with the commands needed to deploy the backup on the IIB server
-            cd /path/to/deploy
+            cd /temp/backup
             tar -xzvf backup.tar.gz
             # Additional deployment commands here
             # Example: iib command to deploy or import the backup
