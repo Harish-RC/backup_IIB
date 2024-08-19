@@ -9,43 +9,46 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      
       - name: Create backup
         run: |
-          # Replace 'your-directory' with the directory you want to back up
-          . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile 
-          mqsibackupbroker Demo_INODE1 -a Demo_INODE1.zip -d /I2AC/backup          
+          # Source the mqsiprofile to set up the IIB environment
+          . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
+
+          # Create a backup of the broker
+          mqsibackupbroker Demo_INODE1 -a /I2AC/backup/Demo_INODE1.zip
+
       - name: Upload backup to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: iib-backup
-          path: backup.tar.gz
+          path: /I2AC/backup/Demo_INODE1.zip
+
       - name: Deploy backup to IIB server via SSH
         env:
           SSH_PRIVATE_KEY: '${{ secrets.SSH_PRIVATE_KEY }}'
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
-        run: >
+        run: |
           # Start the SSH agent and add the private key
-
           echo "$SSH_PRIVATE_KEY" | ssh-add -
 
-
           # Deploy the backup using SCP to transfer the file
-
-          scp -o StrictHostKeyChecking=no backup.tar.gz
-          $IIB_USER@$IIB_SERVER:/temp/backup
-
+          scp -o StrictHostKeyChecking=no /I2AC/backup/Demo_INODE1.zip $IIB_USER@$IIB_SERVER:/I2AC/backup
 
           # SSH into the IIB server to perform deployment steps
-
           ssh -o StrictHostKeyChecking=no $IIB_USER@$IIB_SERVER << 'EOF'
-            # Replace with the commands needed to deploy the backup on the IIB server
-            cd /temp/backup
-            tar -xzvf backup.tar.gz
+            # Navigate to the deployment directory
+            cd /I2AC/backup
+
+            # Unzip the backup file
+            unzip Demo_INODE1.zip
+
             # Additional deployment commands here
             # Example: iib command to deploy or import the backup
-            # iib-deploy --file backup.tar.gz
+            # iib-restore --file Demo_INODE1.zip
           EOF
+
       - name: Clean up
         run: |
-          rm -f backup.tar.gz
+          rm -f /I2AC/backup/Demo_INODE1.zip
