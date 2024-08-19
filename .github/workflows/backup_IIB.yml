@@ -9,47 +9,49 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Start SSH agent and add the private key
         env:
           SSH_PRIVATE_KEY: '${{ secrets.SSH_PRIVATE_KEY }}'
         run: |
           eval "$(ssh-agent -s)"
           echo "$SSH_PRIVATE_KEY" | ssh-add -
-
       - name: Backup broker on IIB server
         env:
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
-        run: |
-            . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
+        run: >
+          ssh -n -q -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
+          $IIB_USER@$IIB_SERVER << 'EOF'
+            '. /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile'
             mqsibackupbroker Demo_INODE1 -a /I2AC/backup/Demo_INODE1.zip
-        
-
+          EOF
       - name: Download backup from IIB server
         env:
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
-        run: |
-          scp -o StrictHostKeyChecking=no $IIB_USER@$IIB_SERVER:/I2AC/backup/Demo_INODE1.zip .
-
+        run: >
+          scp ssh -n -q -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
+          $IIB_USER@$IIB_SERVER:/I2AC/backup/Demo_INODE1.zip .
       - name: Upload backup to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: iib-backup
           path: Demo_INODE1.zip
-
       - name: Deploy backup to IIB server via SSH
         env:
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
-        run: |
-          scp -o StrictHostKeyChecking=no Demo_INODE1.zip $IIB_USER@$IIB_SERVER:/I2AC/backup
-            . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
+        run: >
+          ssh -n -q -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no Demo_INODE1.zip
+          $IIB_USER@$IIB_SERVER:/I2AC/backup
+
+          ssh -n -q -i ~/.ssh/id_rsa -o
+          StrictHostKeyChecking=no_USER@$IIB_SERVER << 'EOF'
+            '. /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile'
             cd /I2AC/backup
             unzip Demo_INODE1.zip
             # Additional deployment commands here
-
+          EOF
       - name: Clean up
         run: |
           rm -f Demo_INODE1.zip
