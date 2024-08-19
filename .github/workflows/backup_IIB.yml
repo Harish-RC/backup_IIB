@@ -1,0 +1,50 @@
+name: Backup and Deploy with IIB via SSH
+'on':
+  push:
+    branches:
+      - main
+jobs:
+  backup-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Create backup
+        run: |
+          # Replace 'your-directory' with the directory you want to back up
+          tar -czvf backup.tar.gz /tmp/backup/
+      - name: Upload backup to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: iib-backup
+          path: backup.tar.gz
+      - name: Deploy backup to IIB server via SSH
+        env:
+          SSH_PRIVATE_KEY: '${{ secrets.SSH_PRIVATE_KEY }}'
+          IIB_SERVER: '${{ secrets.IIB_SERVER }}'
+          IIB_USER: '${{ secrets.IIB_USER }}'
+        run: >
+          # Start the SSH agent and add the private key
+
+          echo "$SSH_PRIVATE_KEY" | ssh-add -
+
+
+          # Deploy the backup using SCP to transfer the file
+
+          scp -o StrictHostKeyChecking=no backup.tar.gz
+          $IIB_USER@$IIB_SERVER:/path/to/deploy
+
+
+          # SSH into the IIB server to perform deployment steps
+
+          ssh -o StrictHostKeyChecking=no $IIB_USER@$IIB_SERVER << 'EOF'
+            # Replace with the commands needed to deploy the backup on the IIB server
+            cd /path/to/deploy
+            tar -xzvf backup.tar.gz
+            # Additional deployment commands here
+            # Example: iib command to deploy or import the backup
+            # iib-deploy --file backup.tar.gz
+          EOF
+      - name: Clean up
+        run: |
+          rm -f backup.tar.gz
