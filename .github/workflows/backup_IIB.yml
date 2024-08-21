@@ -24,7 +24,6 @@ jobs:
           IIB_SERVER: '${{ secrets.IIB_SERVER }}'
           IIB_USER: '${{ secrets.IIB_USER }}'
         run: |
-           # '. /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile'
            mqsibackupbroker Demo_INODE1 -a /I2AC/backup/Demo_INODE1.zip
       
 
