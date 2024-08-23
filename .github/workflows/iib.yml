@@ -1,0 +1,25 @@
+name: SSH with Password
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run mqsiprofile command on remote server
+        env:
+          REMOTE_HOST: '${{ secrets.REMOTE_HOST }}'
+          REMOTE_USER: '${{ secrets.REMOTE_USER }}'
+          REMOTE_PASSWORD: '${{ secrets.REMOTE_PASSWORD }}'
+        run: |
+          sshpass -p "$REMOTE_PASSWORD" ssh -o StrictHostKeyChecking=no $REMOTE_USER@$REMOTE_HOST << 'EOF'
+            echo "Running IIB commands..."
+            . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
+          EOF
