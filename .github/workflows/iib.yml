@@ -11,7 +11,13 @@ jobs:
     runs-on: ubuntu-latest  # Use GitHub-hosted runner (Ubuntu)
 
     steps:
-      - uses: actions/checkout@v4
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          password: ${{ secrets.REMOTE_PASSWORD }}
+          port: ${{ secrets.PORT }}
 
       - name: Run mqsiprofile command
         env:
