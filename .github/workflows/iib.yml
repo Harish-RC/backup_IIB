@@ -19,4 +19,4 @@ jobs:
           PASSWORD: ${{ secrets.REMOTE_PASSWORD }}
         run: |
           echo "Running IIB commands..."
-          echo "$REMOTE_PASSWORD" | sudo -S . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
+          echo "$REMOTE_PASSWORD" | . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
