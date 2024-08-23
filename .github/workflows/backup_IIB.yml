@@ -3,7 +3,7 @@ name: Backup from IIB Server via SSH
 on:
   push:
     branches:
-      - main
+      - feture
 
 jobs:
   backup:
