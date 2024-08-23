@@ -1,26 +1,23 @@
 name: IIB-ACE
- 
+
 on:
   push:
     branches: [ "main" ]
- 
+
   workflow_dispatch:
- 
+
 jobs:
   build:
-    runs-on: self-hosted
- 
+    runs-on: ubuntu-latest  # Use GitHub-hosted runner (Ubuntu)
+
     steps:
       - uses: actions/checkout@v4
- 
+
       - name: Run mqsiprofile command
+        env:
+          Host: ${{secrets.REMOTE_HOST}}
+          USERNAME: ${{ secrets.REMOTE_USER }}
+          PASSWORD: ${{ secrets.REMOTE_PASSWORD }}
         run: |
           echo "Running IIB commands..."
-          . /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile; mqsilist
-
-      # - name: Run mqsilist command
-      #   run: |
-      #     mqsilist Demo_INODE1
-      #     env:
-      #       IIB_HOME: /opt/ibm/mqsi/iib-10.0.0.7/server/bin/
-        
+          echo "$REMOTE_PASSWORD" | sudo -S /opt/ibm/mqsi/iib-10.0.0.7/server/bin/mqsiprofile
